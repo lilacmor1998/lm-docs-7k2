@@ -15,6 +15,7 @@ body{font-family:Heebo,Arial,sans-serif;background:#1a1619;color:var(--ink)}
 .app{display:grid;grid-template-columns:380px 1fr;min-height:100vh}
 /* ---------- form panel ---------- */
 .panel{background:#0c0a0c;color:#f4eef1;padding:22px 22px 40px;overflow:auto;max-height:100vh;position:sticky;top:0}
+.tabs{display:flex;gap:4px;background:#1c181b;border:1px solid #332c31;border-radius:999px;padding:3px;margin:12px 0 14px}.tabs a{flex:1;text-align:center;text-decoration:none;color:rgba(244,238,241,.7);font:500 13px Heebo;padding:7px;border-radius:999px}.tabs a.on{background:#f4eef1;color:#0c0a0c}
 .panel h1{font:600 18px/1.2 Heebo;margin:0 0 4px;display:flex;align-items:center;gap:10px}
 .panel h1 svg{height:20px}
 .panel .sub{font-size:13px;color:rgba(244,238,241,.55);margin-bottom:18px}
@@ -109,6 +110,7 @@ body.receipt .bankbox,body.nobank .bankbox{display:none}
 <div class="app">
 <aside class="panel">
   <h1><svg viewBox="0 0 56 36"><g transform="translate(8 0) skewX(-14)" fill="#fff"><path d="M4 4h5v23.8h10.6V32H4z"/><path d="M22.4 32V4h5.2l7.4 12.6L42.4 4h5.2v28h-5V13.6l-6.1 10.3h-3l-6.1-10.3V32z"/></g></svg>מסמכים ללקוח</h1>
+  <nav class="tabs"><a href="hours.html">שעון עבודה</a><a class="on" href="index.html">חשבון וקבלה</a></nav>
   <div class="sub">ממלאים כאן, רואים את המסמך משמאל ושומרים כ־PDF.</div>
 
   <div class="seg" id="type"><button data-t="deal" class="on">חשבון עסקה</button><button data-t="receipt">קבלה</button></div>
@@ -172,7 +174,7 @@ body.receipt .bankbox,body.nobank .bankbox{display:none}
   <div class="page" id="page">
     <div class="band">
       <div class="brand"><svg viewBox="0 0 56 36"><g transform="translate(8 0) skewX(-14)" fill="#fff"><path d="M4 4h5v23.8h10.6V32H4z"/><path d="M22.4 32V4h5.2l7.4 12.6L42.4 4h5.2v28h-5V13.6l-6.1 10.3h-3l-6.1-10.3V32z"/></g></svg><span>STUDIO</span></div>
-      <div class="me"><b id="vMName"></b><span id="vMId"></span><br><span id="vMAddr"></span><br><span class="en" id="vMPhone"></span> · <span class="en" id="vMMail"></span></div>
+      <div class="me"><b id="vMName"></b><span id="vMId"></span><br><span id="vMAddr"></span><br><span class="en" id="vMPhone"></span><span id="vSep"> · </span><span class="en" id="vMMail"></span></div>
     </div>
     <div class="accent"></div>
     <div class="body">
@@ -273,7 +275,7 @@ function render(){
   $('vSub').textContent=fmt(sum);$('vTotal').textContent=fmt(sum);
   $('vPMethod').textContent=$('pMethod').value;$('vPDate').textContent=fd($('pDate').value);$('vPRef').textContent=$('pRef').value||'—';
   $('vNote').textContent=$('note').value;
-  $('vMName').textContent=$('mName').value;$('vMId').textContent=$('mId').value;$('vMAddr').textContent=$('mAddr').value;$('vMPhone').textContent=$('mPhone').value;$('vMMail').textContent=$('mMail').value;
+  $('vMName').textContent=$('mName').value;$('vMId').textContent=$('mId').value;$('vMAddr').textContent=$('mAddr').value;$('vMPhone').textContent=$('mPhone').value;$('vMMail').textContent=$('mMail').value;$('vSep').style.display=($('mPhone').value&&$('mMail').value)?'':'none';
   $('vBank').textContent=$('bBank').value;$('vBranch').textContent=$('bBranch').value;$('vAcc').textContent=$('bAcc').value;$('vBit').textContent=$('bBit').value||'—';$('vBName').textContent=$('mName').value;
   document.body.classList.toggle('nobank',!$('bShow').checked||!$('bAcc').value);
   const m={};for(const k in ME)m[k]=$(k).value;store.set('me',m);
@@ -287,6 +289,13 @@ $('type').addEventListener('click',e=>{const t=e.target.dataset.t;if(!t)return;n
 $('print').onclick=()=>{render();window.print()};
 window.addEventListener('afterprint',()=>{const n=(+$('num').value||0)+1;nums[type]=n;store.set('nums',nums);$('num').value=n;render()});
 drawItems();render();
+try{const raw=localStorage.getItem('lm-invoice-import');if(raw){localStorage.removeItem('lm-invoice-import');const d=JSON.parse(raw);
+  type='deal';$('num').value=nums.deal;
+  if(d.client)$('cName').value=d.client;
+  if(d.items&&d.items.length)items=d.items;
+  if(d.note!=null)$('note').value=d.note;
+  $('date').value=today;drawItems();render();}}catch(e){}
+
 })();
 </script>
 </body>

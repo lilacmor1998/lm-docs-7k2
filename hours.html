@@ -1,0 +1,402 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>LM שעון עבודה</title><style>[hidden]{display:none!important}body{margin:0}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow column, phone-first. The live timer is the hero; clients and the log sit below it. */
+:root{
+  --bg:#0c0a0c; --surface:#161216; --surface2:#1f1a1e; --line:#2f272d;
+  --fg:#f4eef1; --mute:#a2969e; --accent:#f59bc3; --accent-ink:#1a0f15;
+  --ok:#86d6ad; --warn:#f2c879; --danger:#ff8a8a;
+  --f:"Heebo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#faf7f8; --surface:#ffffff; --surface2:#f3edf0; --line:#e6dde2;
+  --fg:#151015; --mute:#6c6369; --accent:#c94b8a; --accent-ink:#ffffff;
+  --ok:#23805a; --warn:#946414; --danger:#c53030; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#faf7f8; --surface:#ffffff; --surface2:#f3edf0; --line:#e6dde2;
+  --fg:#151015; --mute:#6c6369; --accent:#c94b8a; --accent-ink:#ffffff;
+  --ok:#23805a; --warn:#946414; --danger:#c53030; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 15px/1.5 var(--f);padding-inline:16px;padding-block:18px 60px}
+.wrap{max-width:760px;margin-inline:auto;display:flex;flex-direction:column;gap:22px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;direction:ltr}
+.brand svg{height:22px;fill:var(--fg)}
+.brand span{font-size:11px;letter-spacing:.42em;color:var(--mute);border-left:1px solid var(--line);padding-left:10px}
+h1{font-size:15px;font-weight:500;margin:0;color:var(--mute)}
+.sync{font-size:12px;color:var(--mute)}
+
+/* timer hero */
+.timer{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.timer.on{border-color:var(--accent)}
+.fields{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.clock{font-weight:300;font-size:clamp(52px,14vw,84px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;direction:ltr;text-align:center}
+.clock small{display:block;font-size:13px;letter-spacing:0;color:var(--mute);margin-top:10px;direction:rtl;font-weight:400}
+.money{color:var(--accent)}
+.go{border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:17px;padding:15px;width:100%}
+.timer.on .go{background:var(--fg);color:var(--bg)}
+
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:5px}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+textarea{resize:vertical;min-height:90px}
+.newclient{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end}
+
+h2{font-size:13px;font-weight:600;margin:0 0 10px;color:var(--mute);letter-spacing:.04em}
+.section{display:flex;flex-direction:column}
+
+/* clients */
+.clients{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.client{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.client .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.client b{font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.client .rate{font-size:12px;color:var(--mute);white-space:nowrap}
+.owed{display:flex;gap:16px;font-variant-numeric:tabular-nums}
+.owed div{display:flex;flex-direction:column}
+.owed span{font-size:11px;color:var(--mute)}
+.owed strong{font-size:20px;font-weight:500}
+.owed .due strong{color:var(--accent)}
+.owed .sent strong{color:var(--warn)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 13px;font-size:13px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.solid{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.solid:hover{color:var(--accent-ink)}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* summary */
+.summary{background:var(--surface);border:1px solid var(--accent);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.summary textarea{min-height:220px;font-size:14px;line-height:1.6}
+
+/* log */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:13px;color:var(--mute)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.log{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.entry{display:grid;grid-template-columns:54px 1fr auto auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.entry:last-child{border-bottom:0}
+.entry .d{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
+.entry .t{min-width:0}
+.entry .t b{font-weight:500;display:block;overflow-wrap:anywhere}
+.entry .t span{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+.entry .h{font-variant-numeric:tabular-nums;direction:ltr;font-weight:500}
+.pill{font-size:11px;border-radius:999px;padding:2px 8px;border:1px solid currentColor;white-space:nowrap}
+.pill.open{color:var(--accent)} .pill.sent{color:var(--warn)} .pill.paid{color:var(--ok)}
+.x{background:none;border:0;color:var(--mute);font-size:13px;padding:2px 4px}
+.x.arm{color:var(--danger);font-weight:600}
+.meta{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.empty{padding:26px 18px;text-align:center;color:var(--mute);font-size:14px}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:0 16px}
+details[open]{padding-bottom:16px}
+summary{cursor:pointer;padding:14px 0;font-weight:500;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--accent);font-size:20px;line-height:1}
+details[open] summary::after{content:"−"}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.msg{font-size:13px;color:var(--ok);min-height:1.2em}
+.err{color:var(--danger)}
+
+@media (max-width:520px){
+  .fields,.grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+  .newclient{grid-template-columns:1fr 90px}
+  .newclient .btn{grid-column:1/-1}
+  .entry{grid-template-columns:44px 1fr auto;gap:10px}
+  .entry .meta{grid-column:2/-1;justify-content:flex-start}
+}
+@media (prefers-reduced-motion:no-preference){.timer.on .clock{animation:breathe 2.4s ease-in-out infinite}}
+@keyframes breathe{50%{opacity:.82}}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tabs a{flex:1;text-align:center;text-decoration:none;color:var(--mute);font-weight:500;font-size:14px;padding:8px;border-radius:999px}
+.tabs a.on{background:var(--fg);color:var(--bg)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><svg viewBox="0 0 56 36" aria-hidden="true"><g transform="translate(8 0) skewX(-14)"><path d="M4 4h5v23.8h10.6V32H4z"/><path d="M22.4 32V4h5.2l7.4 12.6L42.4 4h5.2v28h-5V13.6l-6.1 10.3h-3l-6.1-10.3V32z"/></g></svg><span>STUDIO</span></div>
+    <div style="text-align:left"><h1>שעון עבודה</h1><div class="sync" id="sync">טוען…</div></div>
+  </header>
+  <nav class="tabs"><a class="on" href="hours.html">שעון עבודה</a><a href="index.html">חשבון וקבלה</a></nav>
+
+  <section class="timer" id="timerCard" aria-label="שעון">
+    <div class="fields">
+      <div><label for="tClient">לקוח</label><select id="tClient"></select></div>
+      <div><label for="tTask">על מה עובדים</label><input id="tTask" placeholder="למשל: סקיצות לוגו"></div>
+    </div>
+    <div class="newclient" id="newClientBox" hidden>
+      <div><label for="ncName">שם לקוח חדש</label><input id="ncName" placeholder="שם העסק או האדם"></div>
+      <div><label for="ncRate">₪ לשעה</label><input id="ncRate" inputmode="decimal"></div>
+      <button class="btn solid" id="ncSave">הוספה</button>
+    </div>
+    <div class="clock" id="clock">0:00:00<small id="clockSub">בוחרים לקוח ולוחצים התחלה</small></div>
+    <button class="go" id="goBtn">התחלה</button>
+  </section>
+
+  <section class="section" id="summaryWrap" hidden>
+    <div class="summary">
+      <h2 id="sumTitle">סיכום ללקוח</h2>
+      <label for="sumText">אפשר לערוך לפני ששולחים</label>
+      <textarea id="sumText"></textarea>
+      <div class="row">
+        <button class="btn solid" id="sumCopy">העתקה</button>
+        <button class="btn" id="sumInv">חשבון עסקה מהשעות</button>
+        <button class="btn" id="sumSent">סימון כנשלח ללקוח</button>
+        <button class="btn" id="sumClose">סגירה</button>
+      </div>
+      <div class="msg" id="sumMsg"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>לקוחות</h2>
+    <div class="clients" id="clients"></div>
+  </section>
+
+  <section class="section">
+    <h2>יומן שעות</h2>
+    <div class="chips" id="chips"></div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <details id="manual">
+    <summary>הוספת שעות ידנית</summary>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="grid2">
+        <div><label for="mClient">לקוח</label><select id="mClient"></select></div>
+        <div><label for="mTask">על מה עבדת</label><input id="mTask"></div>
+      </div>
+      <div class="grid3">
+        <div><label for="mDate">תאריך</label><input id="mDate" type="date"></div>
+        <div><label for="mFrom">משעה</label><input id="mFrom" type="time"></div>
+        <div><label for="mTo">עד שעה</label><input id="mTo" type="time"></div>
+      </div>
+      <div class="hint" style="font-size:12px;color:var(--mute)">עבדת בכמה חלקים באותו יום? מוסיפים כל חלק בנפרד.</div>
+      <div class="row"><button class="btn solid" id="mAdd">הוספה ליומן</button></div>
+      <div class="msg" id="mMsg"></div>
+    </div>
+  </details>
+
+  <details id="settings">
+    <summary>הגדרות</summary>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="grid2">
+        <div><label for="sName">השם שלך (לחתימה בסיכום)</label><input id="sName"></div>
+        <div><label for="sRate">מחיר ברירת מחדל לשעה ₪</label><input id="sRate" inputmode="decimal"></div>
+      </div>
+      <div><label for="sRound">עיגול שעות בסיכום</label>
+        <select id="sRound"><option value="0">בלי עיגול</option><option value="15">לרבע שעה</option><option value="30">לחצי שעה</option></select></div>
+      <div><label for="sPay">פרטי תשלום שיופיעו בסיכום</label><textarea id="sPay" placeholder="בנק, סניף, מספר חשבון, ביט"></textarea></div>
+      <div class="row"><button class="btn solid" id="sSave">שמירה</button></div>
+      <div class="msg" id="sMsg"></div>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const isoOf=ms=>{const d=new Date(ms);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const dm=iso=>iso?iso.slice(8,10)+"/"+iso.slice(5,7):"";
+const hm=min=>Math.floor(min/60)+":"+pad(Math.round(min%60));
+const ils=n=>"₪"+(Math.round(n*100)/100).toLocaleString("he-IL",{maximumFractionDigits:2});
+
+/* ---------- storage: db when available, browser storage otherwise ---------- */
+const state={clients:[],sessions:[],timer:{running:false},settings:{name:"",rate:150,round:30,pay:""}};
+let store=null;
+function makeLocal(){
+  const k="lm-hours-v1";
+  let data;try{data=JSON.parse(localStorage.getItem(k))||{}}catch(e){data={}}
+  data.clients=data.clients||{};data.sessions=data.sessions||{};data.doc=data.doc||{};
+  const subs={};
+  const save=()=>{try{localStorage.setItem(k,JSON.stringify(data))}catch(e){}};
+  const emit=c=>(subs[c]||[]).forEach(f=>f(Object.entries(data[c]).map(([id,v])=>({id,...v}))));
+  const emitDoc=p=>(subs["doc:"+p]||[]).forEach(f=>f(data.doc[p]||null));
+  return{kind:"local",
+    listen(c,f){(subs[c]=subs[c]||[]).push(f);emit(c)},
+    listenDoc(p,f){(subs["doc:"+p]=subs["doc:"+p]||[]).push(f);emitDoc(p)},
+    async add(c,v){const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);data[c][id]=v;save();emit(c)},
+    async update(c,id,v){data[c][id]={...data[c][id],...v};save();emit(c)},
+    async del(c,id){delete data[c][id];save();emit(c)},
+    async setDoc(p,v){data.doc[p]=v;save();emitDoc(p)}};
+}
+function makeDb(db){
+  return{kind:"db",
+    listen(c,f){db.collection(c).onSnapshot(s=>f(s.docs.map(d=>({id:d.id,...d.data()}))),e=>setSync("החיבור נקטע. רעננו את הדף",true))},
+    listenDoc(p,f){db.doc(p).onSnapshot(s=>f(s.exists?s.data():null),()=>{})},
+    async add(c,v){await db.collection(c).add(v)},
+    async update(c,id,v){await db.collection(c).doc(id).update(v)},
+    async del(c,id){await db.collection(c).doc(id).delete()},
+    async setDoc(p,v){await db.doc(p).set(v)}};
+}
+function setSync(t,bad){const s=$("sync");s.textContent=t;s.classList.toggle("err",!!bad)}
+
+/* ---------- helpers ---------- */
+const clientById=id=>state.clients.find(c=>c.id===id);
+const rateOf=c=>Number(c&&c.rate)||Number(state.settings.rate)||150;
+function billH(min){const r=Number(state.settings.round)||0;if(!r)return Math.round(min/60*100)/100;return Math.round(min/r)*r/60}
+function sumFor(cid,statuses){return state.sessions.filter(s=>s.clientId===cid&&statuses.includes(s.status||"open"))}
+function money(list,c){const min=list.reduce((a,s)=>a+(s.minutes||0),0);const h=billH(min);return{min,h,amt:h*rateOf(c)}}
+
+/* ---------- render ---------- */
+let filter="all";
+function fillSelects(){
+  const opts=state.clients.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"","he")).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  const t=$("tClient"),m=$("mClient"),tv=t.value,mv=m.value;
+  t.innerHTML=(state.clients.length?"":`<option value="">אין עדיין לקוחות</option>`)+opts+`<option value="__new">+ לקוח חדש</option>`;
+  m.innerHTML=(state.clients.length?"":`<option value="">אין עדיין לקוחות</option>`)+opts;
+  if(state.timer.running&&state.timer.clientId)t.value=state.timer.clientId;else if(tv&&[...t.options].some(o=>o.value===tv))t.value=tv;
+  if(mv&&[...m.options].some(o=>o.value===mv))m.value=mv;
+  $("newClientBox").hidden=t.value!=="__new"&&state.clients.length>0;
+  if(!state.clients.length)t.value="__new";
+}
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderClients(){
+  const el=$("clients");
+  if(!state.clients.length){el.innerHTML=`<div class="client"><b>עוד אין לקוחות</b><span style="color:var(--mute);font-size:14px">מוסיפים לקוח בשעון למעלה, לוחצים התחלה, וכשמסיימים כאן יופיע כמה הוא חייב.</span></div>`;return}
+  el.innerHTML=state.clients.slice().sort((a,b)=>money(sumFor(b.id,["open"]),b).amt-money(sumFor(a.id,["open"]),a).amt).map(c=>{
+    const o=money(sumFor(c.id,["open"]),c),s=money(sumFor(c.id,["sent"]),c);
+    return `<div class="client"><div class="top"><b>${esc(c.name)}</b><span class="rate">₪${rateOf(c)} לשעה</span></div>
+      <div class="owed"><div class="due"><span>לא חויב עדיין</span><strong>${ils(o.amt)}</strong><span>${hm(o.min)} שעות</span></div>
+      ${s.min?`<div class="sent"><span>ממתין לתשלום</span><strong>${ils(s.amt)}</strong><span>${hm(s.min)} שעות</span></div>`:""}</div>
+      <div class="row"><button class="btn solid" data-sum="${c.id}" ${o.min?"":"disabled"}>סיכום ללקוח</button>
+      <button class="btn" data-paid="${c.id}" ${(o.min||s.min)?"":"disabled"}>התקבל תשלום</button></div></div>`}).join("");
+}
+function renderLog(){
+  const chips=[`<button class="chip ${filter==="all"?"on":""}" data-f="all">הכול</button>`].concat(state.clients.map(c=>`<button class="chip ${filter===c.id?"on":""}" data-f="${c.id}">${esc(c.name)}</button>`));
+  $("chips").innerHTML=chips.join("");
+  const list=state.sessions.filter(s=>filter==="all"||s.clientId===filter).sort((a,b)=>(b.start||0)-(a.start||0)).slice(0,80);
+  const label={open:"לא חויב",sent:"נשלח",paid:"שולם"};
+  $("log").innerHTML=list.length?list.map(s=>{const c=clientById(s.clientId);return `<div class="entry">
+    <div class="d">${dm(s.date)}</div>
+    <div class="t"><b>${esc(c?c.name:"לקוח שנמחק")}</b><span>${esc([s.task,s.from?s.from+" עד "+s.to:""].filter(Boolean).join(" · "))}</span></div>
+    <div class="h">${hm(s.minutes||0)}</div>
+    <div class="meta"><span class="pill ${s.status||"open"}">${label[s.status||"open"]}</span><button class="x" data-del="${s.id}" aria-label="מחיקה">מחיקה</button></div></div>`}).join("")
+  :`<div class="empty">כשתסיימי שעה ראשונה, היא תופיע כאן עם התאריך, הלקוח והזמן.</div>`;
+}
+function renderTimer(){
+  const t=state.timer,card=$("timerCard");
+  card.classList.toggle("on",!!t.running);
+  $("goBtn").textContent=t.running?"עצירה ושמירה":"התחלה";
+  $("tClient").disabled=!!t.running;
+  if(t.running&&document.activeElement!==$("tTask"))$("tTask").value=t.task||"";
+  tick();
+}
+function tick(){
+  const t=state.timer;
+  if(!t.running){$("clock").firstChild.nodeValue="0:00:00";$("clockSub").textContent=state.clients.length?"בוחרים לקוח ולוחצים התחלה":"מוסיפים לקוח ראשון ולוחצים התחלה";return}
+  const sec=Math.max(0,Math.floor((Date.now()-t.startedAt)/1000));
+  $("clock").firstChild.nodeValue=Math.floor(sec/3600)+":"+pad(Math.floor(sec%3600/60))+":"+pad(sec%60);
+  const c=clientById(t.clientId),st=new Date(t.startedAt);
+  $("clockSub").innerHTML=`${esc(c?c.name:"")} · מ־${pad(st.getHours())}:${pad(st.getMinutes())} · <span class="money">${ils(sec/3600*rateOf(c))}</span>`;
+}
+function renderAll(){fillSelects();renderClients();renderLog();renderTimer()}
+setInterval(()=>{if(state.timer.running)tick()},1000);
+
+/* ---------- actions ---------- */
+async function addClient(){
+  const name=$("ncName").value.trim();if(!name){$("ncName").focus();return}
+  const rate=Number($("ncRate").value)||Number(state.settings.rate)||150;
+  await store.add("clients",{name,rate,createdAt:Date.now()});
+  $("ncName").value="";
+  setTimeout(()=>{const c=state.clients.find(x=>x.name===name);if(c){$("tClient").value=c.id;$("newClientBox").hidden=true}},300);
+}
+$("ncSave").onclick=addClient;
+$("ncName").addEventListener("keydown",e=>{if(e.key==="Enter")addClient()});
+$("tClient").onchange=()=>{$("newClientBox").hidden=$("tClient").value!=="__new";if($("tClient").value==="__new")$("ncName").focus()};
+$("goBtn").onclick=async()=>{
+  const t=state.timer;
+  if(!t.running){
+    const cid=$("tClient").value;
+    if(!cid||cid==="__new"){$("newClientBox").hidden=false;$("ncName").focus();return}
+    await store.setDoc("state/timer",{running:true,clientId:cid,task:$("tTask").value.trim(),startedAt:Date.now()});
+  }else{
+    const end=Date.now(),minutes=Math.max(1,Math.round((end-t.startedAt)/60000)),s=new Date(t.startedAt),e=new Date(end);
+    await store.add("sessions",{clientId:t.clientId,task:$("tTask").value.trim()||t.task||"",date:isoOf(t.startedAt),start:t.startedAt,end,minutes,
+      from:pad(s.getHours())+":"+pad(s.getMinutes()),to:pad(e.getHours())+":"+pad(e.getMinutes()),status:"open",createdAt:end});
+    await store.setDoc("state/timer",{running:false});
+    $("tTask").value="";
+  }
+};
+let taskTimer=null;
+$("tTask").addEventListener("input",()=>{if(!state.timer.running)return;clearTimeout(taskTimer);taskTimer=setTimeout(()=>store.setDoc("state/timer",{...state.timer,task:$("tTask").value.trim()}),900)});
+
+$("mDate").value=todayISO();
+$("mAdd").onclick=async()=>{
+  const cid=$("mClient").value,d=$("mDate").value,f=$("mFrom").value,t=$("mTo").value,msg=$("mMsg");
+  msg.classList.remove("err");
+  if(!cid){msg.textContent="קודם מוסיפים לקוח בשעון למעלה";msg.classList.add("err");return}
+  if(!d||!f||!t){msg.textContent="חסר תאריך, שעת התחלה או שעת סיום";msg.classList.add("err");return}
+  const[fh,fm]=f.split(":").map(Number),[th,tm]=t.split(":").map(Number);
+  let minutes=(th*60+tm)-(fh*60+fm);if(minutes<=0)minutes+=1440;
+  const start=new Date(d+"T"+f).getTime();
+  await store.add("sessions",{clientId:cid,task:$("mTask").value.trim(),date:d,start,end:start+minutes*60000,minutes,from:f,to:t,status:"open",createdAt:Date.now()});
+  msg.textContent="נוסף: "+hm(minutes)+" שעות";$("mFrom").value="";$("mTo").value="";$("mTask").value="";
+};
+
+/* summary */
+let sumClient=null;
+function buildSummary(cid){
+  const c=clientById(cid),list=sumFor(cid,["open"]).sort((a,b)=>(a.start||0)-(b.start||0));
+  const m=money(list,c),r=Number(state.settings.round)||0;
+  const lines=list.map(s=>`${dm(s.date)} · ${s.task||"עבודה"} · ${hm(s.minutes)}`);
+  const hTxt=String(Math.round(m.h*100)/100);
+  let txt=`היי ${c.name},\nמצרפת סיכום שעות עבודה:\n\n${lines.join("\n")}\n\nסה״כ ${hm(m.min)} שעות${r?` (מעוגל ל־${hTxt} שעות)`:""}\n${hTxt} שעות × ₪${rateOf(c)} = ${ils(m.amt)}`;
+  if(state.settings.pay)txt+=`\n\nאפשר להעביר תשלום כאן:\n${state.settings.pay}`;
+  txt+=`\n\nתודה!${state.settings.name?"\n"+state.settings.name:""}`;
+  return txt;
+}
+$("clients").addEventListener("click",async e=>{
+  const sb=e.target.closest("[data-sum]"),pb=e.target.closest("[data-paid]");
+  if(sb&&!sb.disabled){sumClient=sb.dataset.sum;$("sumTitle").textContent="סיכום ל"+clientById(sumClient).name;$("sumText").value=buildSummary(sumClient);$("sumMsg").textContent="";$("summaryWrap").hidden=false;$("summaryWrap").scrollIntoView({behavior:"smooth",block:"start"})}
+  if(pb&&!pb.disabled){
+    if(pb.dataset.arm!=="1"){pb.dataset.arm="1";pb.textContent="לסמן הכול כשולם?";setTimeout(()=>{if(pb.isConnected){pb.dataset.arm="";pb.textContent="התקבל תשלום"}},4000);return}
+    for(const s of sumFor(pb.dataset.paid,["open","sent"]))await store.update("sessions",s.id,{status:"paid",paidAt:Date.now()});
+  }
+});
+$("sumCopy").onclick=async()=>{const t=$("sumText");try{await navigator.clipboard.writeText(t.value);$("sumMsg").textContent="הועתק. אפשר להדביק בוואטסאפ או במייל."}catch(e){t.focus();t.select();$("sumMsg").textContent="הטקסט מסומן. לוחצים העתקה במקלדת (Cmd+C)."}};
+$("sumSent").onclick=async()=>{if(!sumClient)return;for(const s of sumFor(sumClient,["open"]))await store.update("sessions",s.id,{status:"sent",sentAt:Date.now()});$("sumMsg").textContent="סומן כנשלח. כשהכסף נכנס לוחצים \"התקבל תשלום\".";};
+$("sumInv").onclick=()=>{if(!sumClient)return;const c=clientById(sumClient),list=sumFor(sumClient,["open"]).sort((a,b)=>(a.start||0)-(b.start||0));const m=money(list,c);
+  const first=list[0],last=list[list.length-1];const range=first?(first.date===last.date?dm(first.date):dm(first.date)+" עד "+dm(last.date)):"";
+  const note=list.map(s=>`${dm(s.date)} · ${s.task||"עבודה"} · ${hm(s.minutes)}`).join("\n")+`\n\nסה״כ ${Math.round(m.h*100)/100} שעות × ₪${rateOf(c)} לשעה`;
+  try{localStorage.setItem("lm-invoice-import",JSON.stringify({client:c.name,items:[{d:"שעות עבודה"+(range?" "+range:""),q:Math.round(m.h*100)/100,p:rateOf(c)}],note}))}catch(e){}
+  location.href="index.html"};
+$("sumClose").onclick=()=>{$("summaryWrap").hidden=true;sumClient=null};
+
+/* log */
+$("chips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(b){filter=b.dataset.f;renderLog()}});
+$("log").addEventListener("click",async e=>{const b=e.target.closest("[data-del]");if(!b)return;
+  if(!b.classList.contains("arm")){b.classList.add("arm");b.textContent="למחוק?";setTimeout(()=>{if(b.isConnected){b.classList.remove("arm");b.textContent="מחיקה"}},4000);return}
+  await store.del("sessions",b.dataset.del)});
+
+/* settings */
+function fillSettings(){const s=state.settings;$("sName").value=s.name||"";$("sRate").value=s.rate||150;$("sRound").value=String(s.round??30);$("sPay").value=s.pay||"";$("ncRate").placeholder=String(s.rate||150)}
+$("sSave").onclick=async()=>{await store.setDoc("state/settings",{name:$("sName").value.trim(),rate:Number($("sRate").value)||150,round:Number($("sRound").value),pay:$("sPay").value.trim()});$("sMsg").textContent="נשמר"};
+
+/* ---------- boot ---------- */
+function start(s){
+  store=s;
+  setSync(s.kind==="db"?"מסונכרן בין המכשירים":"נשמר רק בדפדפן הזה");
+  s.listen("clients",l=>{state.clients=l;renderAll()});
+  s.listen("sessions",l=>{state.sessions=l;renderClients();renderLog()});
+  s.listenDoc("state/timer",d=>{state.timer=d||{running:false};fillSelects();renderTimer()});
+  s.listenDoc("state/settings",d=>{if(d)state.settings={...state.settings,...d};fillSettings();renderClients()});
+}
+renderAll();fillSettings();
+(async()=>{
+  let db=null;
+  try{if(window.claude&&window.claude.use)db=await window.claude.use("db")}catch(e){db=null}
+  start(db?makeDb(db):makeLocal());
+})();
+})();
+</script>
+</body></html>
